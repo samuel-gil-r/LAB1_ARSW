@@ -40,6 +40,7 @@ La clase `Control` actúa como monitor. Todos los métodos de sincronización so
 ```java
 <img width="566" height="401" alt="image" src="https://github.com/user-attachments/assets/add06b1f-100c-4b8c-a5bd-285d05e8ad81" />
 
+
 ```
 
 ### Evidencia de ejecución
