@@ -38,29 +38,13 @@ Programa multi-hilo que busca números primos en el rango `[0, 30 000 000]` usan
 La clase `Control` actúa como monitor. Todos los métodos de sincronización son `synchronized` sobre `this`:
 
 ```java
-// Worker llama esto antes de cada número — bloquea si pause == true
-public synchronized void checkPause() {
-    while (pause) {
-        try {
-            wait();
-        } catch (Exception e) {
-            System.out.println("fail the waiting method");
-        }
-    }
-}
+<img width="566" height="401" alt="image" src="https://github.com/user-attachments/assets/add06b1f-100c-4b8c-a5bd-285d05e8ad81" />
 
-// Llamado tras presionar ENTER — despierta todos los workers
-public synchronized void resumeThread() {
-    pause = false;
-    notifyAll();
-}
 ```
 
 ### Evidencia de ejecución
+<img width="665" height="561" alt="image" src="https://github.com/user-attachments/assets/f12414f0-0c51-4107-85f1-524f4853fed0" />
 
-![Pausa con conteo de primos](https://github.com/user-attachments/assets/ef31c655-e73a-4cf1-98c4-dec801a406f4)
-
-![Reanudación tras ENTER](https://github.com/user-attachments/assets/25d69607-2cc3-4d94-9d5a-f7d7f367077f)
 
 ### Conclusiones
 
