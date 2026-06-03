@@ -41,7 +41,8 @@ La clase `Control` actúa como monitor. Todos los métodos de sincronización so
 
 
 ### Evidencia de ejecución
-<img width="665" height="561" alt="image" src="https://github.com/user-attachments/assets/f12414f0-0c51-4107-85f1-524f4853fed0" />
+<img width="437" height="613" alt="image" src="https://github.com/user-attachments/assets/baaff236-8db6-4372-baaa-7c1c1a003e40" />
+
 
 
 ### Conclusiones
