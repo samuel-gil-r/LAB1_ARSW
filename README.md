@@ -37,11 +37,8 @@ Programa multi-hilo que busca números primos en el rango `[0, 30 000 000]` usan
 
 La clase `Control` actúa como monitor. Todos los métodos de sincronización son `synchronized` sobre `this`:
 
-```
-
 <img width="481" height="383" alt="image" src="https://github.com/user-attachments/assets/1b7a4cbd-01e1-40a1-aedc-0bba080db576" />
 
-```
 
 ### Evidencia de ejecución
 <img width="665" height="561" alt="image" src="https://github.com/user-attachments/assets/f12414f0-0c51-4107-85f1-524f4853fed0" />
