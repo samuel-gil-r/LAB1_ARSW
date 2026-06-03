@@ -46,10 +46,10 @@ La clase `Control` actúa como monitor. Todos los métodos de sincronización so
 
 ### Conclusiones
 
-- **Sin busy-waiting:** los workers llaman `wait()` dentro del `while(pause)` — ceden la CPU completamente mientras están pausados.
-- **Sin lost wakeups:** el `while (pause)` re-verifica la condición al despertar, protegiendo contra *spurious wakeups*.
+- **Espera por ENTER con Scanner:** para cumplir la condición de que el programa espere al usuario antes de reanudar, el hilo `Control` usa `scanner.nextLine()` que lo bloquea hasta que se presiona ENTER. Solo después llama a `resumeThread()`.
+- **Sin busy-waiting:** mediante `wait()` todos los hilos trabajadores se suspenden completamente hasta ser notificados — no consumen CPU mientras esperan.
+- **Sin lost wakeups:** `notifyAll()` despierta a **todos** los hilos en espera sin importar cuál se durmió primero, y el `while (pause)` re-verifica la condición al despertar, protegiendo contra *spurious wakeups*.
 - **Monitor único:** `Control.this` es el único objeto de sincronización; `checkPause()` y `resumeThread()` comparten el mismo lock, eliminando el riesgo de deadlock por monitores cruzados.
-- **Consistencia:** cuando `pause = true` se establece, los workers terminan su iteración actual antes de bloquearse — el conteo mostrado puede desfasarse por unos pocos primos, lo cual es aceptable para este ejercicio.
 
 ### Cómo ejecutar
 
