@@ -37,9 +37,9 @@ Programa multi-hilo que busca números primos en el rango `[0, 30 000 000]` usan
 
 La clase `Control` actúa como monitor. Todos los métodos de sincronización son `synchronized` sobre `this`:
 
-```java
-<img width="566" height="401" alt="image" src="https://github.com/user-attachments/assets/add06b1f-100c-4b8c-a5bd-285d05e8ad81" />
+```
 
+<img width="481" height="383" alt="image" src="https://github.com/user-attachments/assets/1b7a4cbd-01e1-40a1-aedc-0bba080db576" />
 
 ```
 
