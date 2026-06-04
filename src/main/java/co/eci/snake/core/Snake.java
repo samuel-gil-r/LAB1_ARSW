@@ -39,7 +39,7 @@ public final class Snake {
 
   public Direction direction() { return direction; }
 
-  // synchronized: check-then-act atómico, evita race condition de dirección opuesta
+
   public synchronized void turn(Direction dir) {
     if ((direction == Direction.UP    && dir == Direction.DOWN)  ||
         (direction == Direction.DOWN  && dir == Direction.UP)    ||
@@ -50,7 +50,6 @@ public final class Snake {
     this.direction = dir;
   }
 
-  // synchronized: protege body frente a acceso concurrente desde UI y SnakeRunner
   public synchronized Position head() { return body.peekFirst(); }
 
   public synchronized Deque<Position> snapshot() { return new ArrayDeque<>(body); }

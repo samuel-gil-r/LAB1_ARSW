@@ -26,7 +26,7 @@ public final class SnakeApp extends JFrame {
   private final GameClock clock;
   private final PauseControl pauseControl = new PauseControl();
 
-  // CopyOnWriteArrayList: thread-safe para lecturas concurrentes desde UI y runners
+
   private final List<Snake> snakes = new CopyOnWriteArrayList<>();
 
   private boolean paused = false;

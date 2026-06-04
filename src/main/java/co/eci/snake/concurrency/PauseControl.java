@@ -13,8 +13,7 @@ public final class PauseControl {
         notifyAll();
     }
 
-    // Llamado por cada SnakeRunner antes de cada movimiento.
-    // Bloquea sin busy-waiting hasta que resume() haga notifyAll().
+
     public synchronized void checkPause() throws InterruptedException {
         while (paused) {
             wait();
