@@ -1,5 +1,6 @@
 package co.eci.snake.ui.legacy;
 
+import co.eci.snake.concurrency.PauseControl;
 import co.eci.snake.concurrency.SnakeRunner;
 import co.eci.snake.core.Board;
 import co.eci.snake.core.Direction;
@@ -10,8 +11,10 @@ import co.eci.snake.core.engine.GameClock;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 
 public final class SnakeApp extends JFrame {
@@ -19,8 +22,14 @@ public final class SnakeApp extends JFrame {
   private final Board board;
   private final GamePanel gamePanel;
   private final JButton actionButton;
+  private final JLabel statsLabel;
   private final GameClock clock;
-  private final java.util.List<Snake> snakes = new java.util.ArrayList<>();
+  private final PauseControl pauseControl = new PauseControl();
+
+
+  private final List<Snake> snakes = new CopyOnWriteArrayList<>();
+
+  private boolean paused = false;
 
   public SnakeApp() {
     super("The Snake Race");
@@ -35,11 +44,18 @@ public final class SnakeApp extends JFrame {
     }
 
     this.gamePanel = new GamePanel(board, () -> snakes);
-    this.actionButton = new JButton("Action");
+    this.actionButton = new JButton("Pause");
+    this.statsLabel = new JLabel(" ", SwingConstants.CENTER);
+    statsLabel.setFont(new Font("Monospaced", Font.BOLD, 12));
+    statsLabel.setForeground(new Color(40, 40, 40));
+
+    JPanel south = new JPanel(new BorderLayout());
+    south.add(statsLabel, BorderLayout.NORTH);
+    south.add(actionButton, BorderLayout.SOUTH);
 
     setLayout(new BorderLayout());
     add(gamePanel, BorderLayout.CENTER);
-    add(actionButton, BorderLayout.SOUTH);
+    add(south, BorderLayout.SOUTH);
 
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     pack();
@@ -48,49 +64,26 @@ public final class SnakeApp extends JFrame {
     this.clock = new GameClock(60, () -> SwingUtilities.invokeLater(gamePanel::repaint));
 
     var exec = Executors.newVirtualThreadPerTaskExecutor();
-    snakes.forEach(s -> exec.submit(new SnakeRunner(s, board)));
+    snakes.forEach(s -> exec.submit(new SnakeRunner(s, board, pauseControl)));
 
     actionButton.addActionListener((ActionEvent e) -> togglePause());
 
     gamePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("SPACE"), "pause");
     gamePanel.getActionMap().put("pause", new AbstractAction() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        togglePause();
-      }
+      @Override public void actionPerformed(ActionEvent e) { togglePause(); }
     });
 
     var player = snakes.get(0);
     InputMap im = gamePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
     ActionMap am = gamePanel.getActionMap();
-    im.put(KeyStroke.getKeyStroke("LEFT"), "left");
+    im.put(KeyStroke.getKeyStroke("LEFT"),  "left");
     im.put(KeyStroke.getKeyStroke("RIGHT"), "right");
-    im.put(KeyStroke.getKeyStroke("UP"), "up");
-    im.put(KeyStroke.getKeyStroke("DOWN"), "down");
-    am.put("left", new AbstractAction() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        player.turn(Direction.LEFT);
-      }
-    });
-    am.put("right", new AbstractAction() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        player.turn(Direction.RIGHT);
-      }
-    });
-    am.put("up", new AbstractAction() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        player.turn(Direction.UP);
-      }
-    });
-    am.put("down", new AbstractAction() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        player.turn(Direction.DOWN);
-      }
-    });
+    im.put(KeyStroke.getKeyStroke("UP"),    "up");
+    im.put(KeyStroke.getKeyStroke("DOWN"),  "down");
+    am.put("left",  new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { player.turn(Direction.LEFT); } });
+    am.put("right", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { player.turn(Direction.RIGHT); } });
+    am.put("up",    new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { player.turn(Direction.UP); } });
+    am.put("down",  new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { player.turn(Direction.DOWN); } });
 
     if (snakes.size() > 1) {
       var p2 = snakes.get(1);
@@ -98,30 +91,10 @@ public final class SnakeApp extends JFrame {
       im.put(KeyStroke.getKeyStroke('D'), "p2-right");
       im.put(KeyStroke.getKeyStroke('W'), "p2-up");
       im.put(KeyStroke.getKeyStroke('S'), "p2-down");
-      am.put("p2-left", new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          p2.turn(Direction.LEFT);
-        }
-      });
-      am.put("p2-right", new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          p2.turn(Direction.RIGHT);
-        }
-      });
-      am.put("p2-up", new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          p2.turn(Direction.UP);
-        }
-      });
-      am.put("p2-down", new AbstractAction() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          p2.turn(Direction.DOWN);
-        }
-      });
+      am.put("p2-left",  new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { p2.turn(Direction.LEFT); } });
+      am.put("p2-right", new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { p2.turn(Direction.RIGHT); } });
+      am.put("p2-up",    new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { p2.turn(Direction.UP); } });
+      am.put("p2-down",  new AbstractAction() { @Override public void actionPerformed(ActionEvent e) { p2.turn(Direction.DOWN); } });
     }
 
     setVisible(true);
@@ -129,14 +102,39 @@ public final class SnakeApp extends JFrame {
   }
 
   private void togglePause() {
-    if ("Action".equals(actionButton.getText())) {
-      actionButton.setText("Resume");
+    paused = !paused;
+    if (paused) {
       clock.pause();
+      pauseControl.pause();
+      actionButton.setText("Resume");
+      showStats();
     } else {
-      actionButton.setText("Action");
+      pauseControl.resume();
       clock.resume();
+      actionButton.setText("Pause");
+      statsLabel.setText(" ");
     }
   }
+
+  private void showStats() {
+    // Serpiente viva más larga
+    String longest = snakes.stream()
+        .filter(Snake::isAlive)
+        .max(Comparator.comparingInt(Snake::bodySize))
+        .map(s -> "Serpiente #" + s.id() + " (" + s.bodySize() + " seg.)")
+        .orElse("ninguna viva");
+
+    // Peor serpiente: la que primero murió
+    String firstDead = snakes.stream()
+        .filter(s -> !s.isAlive())
+        .min(Comparator.comparingLong(Snake::deathTime))
+        .map(s -> "Serpiente #" + s.id())
+        .orElse("ninguna muerta aún");
+
+    statsLabel.setText("⏸ Más larga: " + longest + "  |  Primera en morir: " + firstDead);
+  }
+
+  // ---------------------------------------------------------------------------
 
   public static final class GamePanel extends JPanel {
     private final Board board;
@@ -144,9 +142,7 @@ public final class SnakeApp extends JFrame {
     private final int cell = 20;
 
     @FunctionalInterface
-    public interface Supplier {
-      List<Snake> get();
-    }
+    public interface Supplier { List<Snake> get(); }
 
     public GamePanel(Board board, Supplier snakesSupplier) {
       this.board = board;
@@ -161,6 +157,7 @@ public final class SnakeApp extends JFrame {
       var g2 = (Graphics2D) g.create();
       g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+      // Grilla
       g2.setColor(new Color(220, 220, 220));
       for (int x = 0; x <= board.width(); x++)
         g2.drawLine(x * cell, 0, x * cell, board.height() * cell);
@@ -189,7 +186,7 @@ public final class SnakeApp extends JFrame {
         g2.setColor(Color.BLACK);
       }
 
-      // Teleports (flechas rojas)
+      // Teleports
       Map<Position, Position> tp = board.teleports();
       g2.setColor(Color.RED);
       for (var entry : tp.entrySet()) {
@@ -200,7 +197,7 @@ public final class SnakeApp extends JFrame {
         g2.fillPolygon(xs, ys, xs.length);
       }
 
-      // Turbo (rayos)
+      // Turbo
       g2.setColor(Color.BLACK);
       for (var p : board.turbo()) {
         int x = p.x() * cell, y = p.y() * cell;
@@ -209,22 +206,22 @@ public final class SnakeApp extends JFrame {
         g2.fillPolygon(xs, ys, xs.length);
       }
 
-      // Serpientes
+      // Serpientes (vivas en color por ID, muertas en gris)
       var snakes = snakesSupplier.get();
-      int idx = 0;
       for (Snake s : snakes) {
         var body = s.snapshot().toArray(new Position[0]);
+        boolean alive = s.isAlive(); // lectura única: evita tearing visual entre segmentos
+        float hue = (s.id() * 0.618033988f) % 1.0f; // golden ratio — colores distintos por ID
+        Color base = alive ? Color.getHSBColor(hue, 0.85f, 0.75f) : new Color(160, 160, 160);
         for (int i = 0; i < body.length; i++) {
           var p = body[i];
-          Color base = (idx == 0) ? new Color(0, 170, 0) : new Color(0, 160, 180);
           int shade = Math.max(0, 40 - i * 4);
           g2.setColor(new Color(
-              Math.min(255, base.getRed() + shade),
+              Math.min(255, base.getRed()   + shade),
               Math.min(255, base.getGreen() + shade),
-              Math.min(255, base.getBlue() + shade)));
+              Math.min(255, base.getBlue()  + shade)));
           g2.fillRect(p.x() * cell + 2, p.y() * cell + 2, cell - 4, cell - 4);
         }
-        idx++;
       }
       g2.dispose();
     }

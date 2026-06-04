@@ -6,7 +6,7 @@ public class Control extends Thread {
 
     private static final int NTHREADS = 3;
     private static final int MAXVALUE = 30_000_000;
-    private static final int TMILISECONDS = 5_000;
+    private static final int TMILISECONDS = 1_000;
 
     private boolean pause = false;
 
@@ -26,9 +26,13 @@ public class Control extends Thread {
     }
 
 
-    public synchronized void checkPause() throws InterruptedException {
+    public synchronized void checkPause() {
         while (pause) {
-            wait();
+            try {
+                wait();
+            } catch (Exception e) {
+                System.out.println("fail the waiting method");
+            }
         }
     }
 

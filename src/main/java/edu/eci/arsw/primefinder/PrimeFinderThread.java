@@ -20,14 +20,10 @@ public class PrimeFinderThread extends Thread {
     @Override
     public void run() {
         for (int i = a; i < b; i++) {
-            try {
-                control.checkPause();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+            control.checkPause();
             if (isPrime(i)) {
                 primes.add(i);
+                System.out.println(i);
             }
         }
     }
