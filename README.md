@@ -151,6 +151,8 @@ La lectura de `isAlive()` en `paintComponent()` se realiza **una sola vez por se
 ### 4. Robustez bajo carga
 
 Prueba con 20 serpientes (`-Dsnakes=20`):
+<img width="1291" height="667" alt="image" src="https://github.com/user-attachments/assets/281beb07-08b0-4d5a-b47d-1ad9f4f4da70" />
+
 
 - **Sin `ConcurrentModificationException`:** la iteración sobre `CopyOnWriteArrayList` opera sobre una snapshot inmutable.
 - **Sin lecturas inconsistentes:** `Board.step()` es atómico (lock de tablero); `Snake.snapshot()` toma copia defensiva bajo lock de serpiente.
