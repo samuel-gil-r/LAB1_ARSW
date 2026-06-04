@@ -18,7 +18,7 @@ Laboratorio de programación concurrente en Java 21. Se trabajan dos ejercicios:
 
 ## Requisitos
 
-- JDK 21 (Temurin recomendado)
+- JDK 21
 - Maven 3.9+
 
 ---
@@ -128,7 +128,15 @@ Solo se protegen las secciones estrictamente necesarias:
 | `PauseControl` | Monitor clásico (`synchronized` + `while (paused) { wait(); }`) | Bloquea runners sin consumir CPU; `notifyAll()` en `resume()` despierta a todos |
 | `GameClock.state` | `AtomicReference<GameState>` | Cambios atómicos de estado sin lock explícito |
 
-El orden de adquisición de locks es siempre **board → snake** (nunca al revés), eliminando el riesgo de deadlock.
+El orden de adquisición de locks es siempre **board → snake** (nunca al revés), eliminando el riesgo de deadlock.  
+<img width="889" height="120" alt="image" src="https://github.com/user-attachments/assets/d39b6d1a-1c96-4ae2-94d0-c9bdecd12a01" />
+<img width="905" height="838" alt="image" src="https://github.com/user-attachments/assets/1f8862e3-57e6-4cd6-b7ce-289e71ed8977" />   
+<img width="739" height="134" alt="image" src="https://github.com/user-attachments/assets/10d8b301-a4fb-4674-8ff3-dac97e954151" />  
+<img width="736" height="120" alt="image" src="https://github.com/user-attachments/assets/4e805276-4c63-41e2-aa79-00c1e8a62472" />
+
+
+
+
 
 ---
 
