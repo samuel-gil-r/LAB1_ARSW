@@ -89,6 +89,78 @@ mvn "-Dsnakes=4" exec:java
 | WASD | Controla serpiente 1 |
 | Espacio / botón Action | Pausar / Reanudar |
 
+---
+
+### 1. Análisis de concurrencia
+
+El juego crea N serpientes autónomas, cada una ejecutándose en su propio **hilo virtual** (Java 21). Los hilos virtuales permiten lanzar cientos de serpientes sin el coste de memoria de los hilos plataforma (~1 MB/hilo), ya que la JVM multiplexa muchos hilos virtuales sobre pocos hilos del SO.
+
+**Condiciones de carrera identificadas:**
+
+| Situación | Riesgo |
+|---|---|
+| Múltiples serpientes consumen ratones/obstáculos simultáneamente | Modificación concurrente de `HashSet` sin protección → estado inconsistente |
+| `randomEmpty()` genera posiciones nuevas mientras otra serpiente lee el tablero | Corrupción del mapa de posiciones libres |
+| La serpiente avanza (`advance()`) mientras la UI dibuja el cuerpo | Lectura parcial del `ArrayDeque` → `ConcurrentModificationException` |
+| Flag `paused` leído por hilos trabajadores sin barrera de memoria | Posible busy-waiting o missed wakeup |
+
+**Estructuras no seguras en el código original:**
+
+- `HashSet<Position>` en `Board` — no thread-safe para escrituras concurrentes
+- `ArrayDeque<Position>` en `Snake.body` — no thread-safe
+- `ArrayList<Snake>` como contenedor de serpientes — lanza `ConcurrentModificationException` al iterar mientras se agregan/eliminan
+
+**Espera activa eliminada:**
+
+El mecanismo de pausa original podría haber utilizado un bucle `while (paused) {}` (busy-waiting) que consume CPU innecesariamente. Se sustituyó por el patrón monitor con `wait()` / `notifyAll()` en la clase `PauseControl`.
+
+---
+
+### 2. Correcciones mínimas — Regiones críticas protegidas
+
+Solo se protegen las secciones estrictamente necesarias:
+
+| Clase | Protección aplicada | Por qué |
+|---|---|---|
+| `Board` | Todos los métodos `public` son `synchronized`; los getters retornan copias defensivas | `board.step()` modifica colecciones leídas también por la UI |
+| `Snake` | Métodos `synchronized`; campos `volatile alive` y `volatile direction` | Runner y UI acceden concurrentemente al cuerpo y estado |
+| `SnakeApp.snakes` | `CopyOnWriteArrayList<Snake>` | La iteración en el render no lanza `ConcurrentModificationException`; las escrituras (inicialización) son infrecuentes |
+| `PauseControl` | Monitor clásico (`synchronized` + `while (paused) { wait(); }`) | Bloquea runners sin consumir CPU; `notifyAll()` en `resume()` despierta a todos |
+| `GameClock.state` | `AtomicReference<GameState>` | Cambios atómicos de estado sin lock explícito |
+
+El orden de adquisición de locks es siempre **board → snake** (nunca al revés), eliminando el riesgo de deadlock.
+
+---
+
+### 3. Control de ejecución seguro (UI)
+
+El botón **Pause / Resume** y la tecla **SPACE** llaman a `togglePause()`, que coordina dos mecanismos:
+
+1. `clock.pause()` → detiene el `ScheduledExecutorService` del reloj (sin repaint mientras pausado).
+2. `pauseControl.pause()` → los runners llaman a `checkPause()` en cada iteración y se bloquean con `wait()` hasta que se invoque `resume()`.
+
+Al pausar se muestran inmediatamente:
+
+- **Serpiente viva más larga:** `snakes.stream().filter(alive).max(bodySize)`
+- **Primera en morir:** `snakes.stream().filter(dead).min(deathTime)`
+
+La lectura de `isAlive()` en `paintComponent()` se realiza **una sola vez por serpiente** antes del loop de segmentos, evitando que un mismo fotograma pinte algunos segmentos en color y otros en gris (tearing visual).
+
+---
+
+### 4. Robustez bajo carga
+
+Prueba con 20 serpientes (`-Dsnakes=20`):
+
+- **Sin `ConcurrentModificationException`:** la iteración sobre `CopyOnWriteArrayList` opera sobre una snapshot inmutable.
+- **Sin lecturas inconsistentes:** `Board.step()` es atómico (lock de tablero); `Snake.snapshot()` toma copia defensiva bajo lock de serpiente.
+- **Sin deadlocks:** orden de locks siempre board → snake; `PauseControl` usa un único monitor.
+- **Sin degradación notable de rendimiento:** los hilos virtuales no saturan el pool de hilos del SO.
+
+Los colores de las serpientes se generan con el ángulo de tono HSB distribuido por *golden ratio* (`id × 0.618 mod 1`), permitiendo distinguir visualmente hasta decenas de serpientes sin repetir colores similares.
+
+---
+
 ## Ejecutar pruebas
 
 ```bash

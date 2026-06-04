@@ -23,6 +23,7 @@ public class PrimeFinderThread extends Thread {
             control.checkPause();
             if (isPrime(i)) {
                 primes.add(i);
+                System.out.println(i);
             }
         }
     }
