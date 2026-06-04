@@ -153,6 +153,8 @@ Al pausar se muestran inmediatamente:
 - **Primera en morir:** `snakes.stream().filter(dead).min(deathTime)`
 
 La lectura de `isAlive()` en `paintComponent()` se realiza **una sola vez por serpiente** antes del loop de segmentos, evitando que un mismo fotograma pinte algunos segmentos en color y otros en gris (tearing visual).
+<img width="704" height="674" alt="image" src="https://github.com/user-attachments/assets/78498e30-b608-43b0-ba40-c79b69c0977a" />
+
 
 ---
 
